@@ -1,0 +1,65 @@
+
+name: CI/CD - GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check website
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Check required files
+        run: |
+          test -f index.html
+          test -f style.css
+          test -f script.js
+          echo "Da co du 3 file website."
+
+      - name: Check HTML title
+        run: |
+          if ! grep -Eiq '<title[^>]*>.*</title>' index.html; then
+            echo "ERROR: index.html thieu the title!"
+            exit 1
+          fi
+          echo "HTML title hop le."
+
+  deploy:
+    name: Deploy website
+    needs: check
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload website artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
